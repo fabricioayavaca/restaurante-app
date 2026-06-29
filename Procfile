@@ -1,0 +1,1 @@
+web: gunicorn origen_593:app

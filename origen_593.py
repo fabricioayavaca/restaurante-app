@@ -1,10 +1,8 @@
 from flask import Flask, render_template, request
 import sqlite3
 from datetime import datetime
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 import os
+import requests
 
 app = Flask(__name__)
 
@@ -112,12 +110,8 @@ menu = {producto: precio
 # ==========================
 def enviar_factura_email(correo_destino, cliente, fecha, detalles, total):
     try:
-        msg = MIMEMultipart("alternative")
-        msg["Subject"] = f"🧾 Tu factura de Restaurante 593 - {fecha}"
-        msg["From"] = EMAIL_REMITENTE
-        msg["To"] = correo_destino
+        import requests
 
-        # Construir tabla de detalles en HTML
         filas = ""
         for producto, cantidad, subtotal in detalles:
             filas += f"""
@@ -131,18 +125,16 @@ def enviar_factura_email(correo_destino, cliente, fecha, detalles, total):
         <html><body style="font-family:Georgia,serif;background:#fdf6ee;margin:0;padding:20px;">
         <div style="max-width:600px;margin:0 auto;background:white;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.1);">
             <div style="background:#8B0000;color:white;padding:24px;text-align:center;">
-                <h1 style="margin:0;font-size:1.5em;letter-spacing:1px;">🧾 Factura</h1>
-                <p style="margin:4px 0 0;opacity:0.8;font-style:italic;">Restaurante 593 — Sabores del Ecuador</p>
+                <h1 style="margin:0;font-size:1.5em;letter-spacing:1px;">Factura</h1>
+                <p style="margin:4px 0 0;opacity:0.8;font-style:italic;">Restaurante 593 - Sabores del Ecuador</p>
             </div>
             <div style="padding:28px;">
-                <p style="color:#555;margin-bottom:6px;"><strong>👤 Cliente:</strong> {cliente}</p>
-                <p style="color:#555;margin-bottom:20px;"><strong>📅 Fecha:</strong> {fecha}</p>
-
+                <p style="color:#555;margin-bottom:6px;"><strong>Cliente:</strong> {cliente}</p>
+                <p style="color:#555;margin-bottom:20px;"><strong>Fecha:</strong> {fecha}</p>
                 <h2 style="color:#8B0000;font-size:1em;text-transform:uppercase;letter-spacing:1px;
                            margin-bottom:12px;border-bottom:2px solid #8B0000;padding-bottom:8px;">
                     Detalle del pedido
                 </h2>
-
                 <table style="width:100%;border-collapse:collapse;">
                     <thead>
                         <tr style="background:#8B0000;color:white;">
@@ -161,23 +153,29 @@ def enviar_factura_email(correo_destino, cliente, fecha, detalles, total):
                         </tr>
                     </tfoot>
                 </table>
-
                 <p style="margin-top:24px;color:#999;font-size:0.82em;text-align:center;
                           font-family:Arial,sans-serif;">
-                    Gracias por tu pedido · Restaurante 593
+                    Gracias por tu pedido - Restaurante 593
                 </p>
             </div>
         </div>
-        </body></html>
-        """
+        </body></html>"""
 
-        msg.attach(MIMEText(html, "html"))
-
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as servidor:
-            servidor.login(EMAIL_REMITENTE, EMAIL_PASSWORD)
-            servidor.sendmail(EMAIL_REMITENTE, correo_destino, msg.as_string())
-
-        return True
+        response = requests.post(
+            "https://api.brevo.com/v3/smtp/email",
+            headers={
+                "api-key": os.environ.get("BREVO_API_KEY", ""),
+                "Content-Type": "application/json"
+            },
+            json={
+                "sender": {"name": "Restaurante 593", "email": EMAIL_REMITENTE},
+                "to": [{"email": correo_destino}],
+                "subject": f"Tu factura de Restaurante 593 - {fecha}",
+                "htmlContent": html
+            }
+        )
+        print(f"Brevo response: {response.status_code} - {response.text}")
+        return response.status_code == 201
     except Exception as e:
         print(f"Error al enviar correo: {e}")
         return False
@@ -215,10 +213,16 @@ def pedido():
     conexion.close()
 
     # Enviar factura por correo en hilo separado para no bloquear la app
-    # Enviar factura por correo
     email_enviado = False
     if correo and detalles:
-       email_enviado = enviar_factura_email(correo, cliente, fecha, detalles, total)
+        import threading
+        hilo = threading.Thread(
+            target=enviar_factura_email,
+            args=(correo, cliente, fecha, detalles, total)
+        )
+        hilo.daemon = True
+        hilo.start()
+        email_enviado = True  # Asumimos éxito; el error se imprime en logs
 
     return render_template("factura.html",
                            cliente=cliente,
