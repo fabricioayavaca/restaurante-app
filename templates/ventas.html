@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historial de Ventas - Restaurante 593</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f5f5; }
+
+        header {
+            background: #8B0000;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        header h1 { font-size: 1.8em; }
+        header p { opacity: 0.8; margin-top: 5px; }
+
+        .container {
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .resumen {
+            background: #8B0000;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        .resumen h2 { font-size: 1.2em; opacity: 0.9; }
+        .resumen p { font-size: 2em; font-weight: bold; margin-top: 5px; }
+
+        .tabla-wrapper {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        table { width: 100%; border-collapse: collapse; }
+        thead { background: #8B0000; color: white; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #eee; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover { background: #fff8f8; }
+
+        .sin-ventas {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            font-size: 1.1em;
+        }
+
+        .btn-volver {
+            display: block;
+            text-align: center;
+            margin: 25px auto;
+            background: #8B0000;
+            color: white;
+            padding: 14px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+        .btn-volver:hover { background: #a00000; }
+
+        @media (max-width: 600px) {
+            th, td { padding: 8px 10px; font-size: 0.85em; }
+            .resumen p { font-size: 1.5em; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>📊 Historial de Ventas</h1>
+    <p>Restaurante 593</p>
+</header>
+
+<div class="container">
+
+    <div class="resumen">
+        <h2>💰 Total recaudado</h2>
+        <p>${{ "%.2f"|format(total_general) }}</p>
+    </div>
+
+    <div class="tabla-wrapper">
+        {% if registros %}
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Cliente</th>
+                    <th>Fecha</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in registros %}
+                <tr>
+                    <td>{{ r["id"] }}</td>
+                    <td>{{ r["cliente"] }}</td>
+                    <td>{{ r["fecha"] }}</td>
+                    <td>${{ "%.2f"|format(r["total"]) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="sin-ventas">
+            😕 No hay ventas registradas aún.
+        </div>
+        {% endif %}
+    </div>
+
+    <a href="/" class="btn-volver">🍽️ Volver al Menú</a>
+
+</div>
+
+</body>
+</html>
