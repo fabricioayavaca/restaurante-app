@@ -203,7 +203,9 @@ def pedido():
             detalles.append((producto, int(cantidad), subtotal))
             total += subtotal
 
-    fecha = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    from datetime import timezone, timedelta
+    zona_ecuador = timezone(timedelta(hours=-5))
+    fecha = datetime.now(zona_ecuador).strftime("%d/%m/%Y %H:%M:%S")
 
     conexion = get_db()
     cursor = conexion.cursor()
