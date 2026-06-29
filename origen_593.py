@@ -1,8 +1,19 @@
 from flask import Flask, render_template, request
 import sqlite3
 from datetime import datetime
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import os
 
 app = Flask(__name__)
+
+# ==========================
+# CONFIGURACIÓN DE CORREO
+# Cambia estos valores por tu cuenta Gmail
+# ==========================
+EMAIL_REMITENTE = os.environ.get("EMAIL_REMITENTE", "tucorreo@gmail.com")
+EMAIL_PASSWORD  = os.environ.get("EMAIL_PASSWORD", "tu_contrasena_de_app")
 
 # ==========================
 # BASE DE DATOS
@@ -18,73 +29,170 @@ cursor.execute("""
 CREATE TABLE IF NOT EXISTS ventas(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     cliente TEXT NOT NULL,
+    correo TEXT,
     fecha TEXT NOT NULL,
     total REAL NOT NULL
 )
 """)
+# Agregar columna correo si no existe (compatibilidad con bases de datos antiguas)
+try:
+    cursor.execute("ALTER TABLE ventas ADD COLUMN correo TEXT")
+except:
+    pass
 conexion.commit()
 conexion.close()
 
 # ==========================
-# MENÚ
+# MENÚ ORGANIZADO POR SECCIONES
 # ==========================
-menu = {
-    "Ceviche de Camaron": 6.50,
-    "Tigrillo": 3.50,
-    "Encebollado Tradicional": 4.00,
-    "Bolon": 2.50,
-    "Cuy Asado con Papas y Aji": 12.00,
-    "Hornado con Mote": 8.00,
-    "Churrasco": 7.50,
-    "Arroz Marinero": 9.00,
-    "Maito": 6.00,
-    "Tonga de Pollo": 5.00,
-    "Encocado de Pescado": 7.00,
-    "Seco de Chivo": 8.50,
-    "Caldo Bola": 5.50,
-    "Locro de Papas": 4.50,
-    "Caldo de Pollo": 4.00,
-    "Ceviche Mixto": 7.50,
-    "Agua Sin Gas": 1.00,
-    "Agua Con Gas": 1.20,
-    "Cafe": 1.50,
-    "Jugo Mora": 2.00,
-    "Limonada": 2.00,
-    "Maracuya": 2.00,
-    "Naranjilla": 2.00,
-    "Horchata": 2.00,
-    "Coca Cola": 1.50,
-    "Sprite": 1.50,
-    "Fanta": 1.50,
-    "Canelazo": 3.00,
-    "Cerveza Club": 3.50,
-    "Cerveza Pilsener": 3.50,
-    "Cerveza 593": 3.50,
-    "Sangria": 4.00,
-    "Vino": 5.00,
-    "Higos con Queso": 3.00,
-    "Helado de Paila": 2.50,
-    "Espumilla": 2.00,
-    "Pastel de Chonta": 3.50,
-    "Menestra": 1.50,
-    "Choclo": 1.00,
-    "Maduro con Queso": 2.00,
-    "Patacones": 2.00,
-    "Chifles": 1.50,
-    "Huevo": 0.50,
-    "Papas Fritas": 2.00
+menu_secciones = {
+    "🍽️ Platos Fuertes": {
+        "Cuy Asado con Papas y Aji": 12.00,
+        "Hornado con Mote": 8.00,
+        "Churrasco": 7.50,
+        "Arroz Marinero": 9.00,
+        "Maito": 6.00,
+        "Tonga de Pollo": 5.00,
+        "Encocado de Pescado": 7.00,
+        "Seco de Chivo": 8.50,
+    },
+    "🥣 Entradas y Sopas": {
+        "Ceviche de Camaron": 6.50,
+        "Ceviche Mixto": 7.50,
+        "Tigrillo": 3.50,
+        "Encebollado Tradicional": 4.00,
+        "Bolon": 2.50,
+        "Caldo Bola": 5.50,
+        "Locro de Papas": 4.50,
+        "Caldo de Pollo": 4.00,
+    },
+    "🍟 Acompañamientos": {
+        "Menestra": 1.50,
+        "Choclo": 1.00,
+        "Maduro con Queso": 2.00,
+        "Patacones": 2.00,
+        "Chifles": 1.50,
+        "Huevo": 0.50,
+        "Papas Fritas": 2.00,
+    },
+    "🍮 Postres": {
+        "Higos con Queso": 3.00,
+        "Helado de Paila": 2.50,
+        "Espumilla": 2.00,
+        "Pastel de Chonta": 3.50,
+    },
+    "🥤 Bebidas": {
+        "Agua Sin Gas": 1.00,
+        "Agua Con Gas": 1.20,
+        "Cafe": 1.50,
+        "Jugo Mora": 2.00,
+        "Limonada": 2.00,
+        "Maracuya": 2.00,
+        "Naranjilla": 2.00,
+        "Horchata": 2.00,
+        "Coca Cola": 1.50,
+        "Sprite": 1.50,
+        "Fanta": 1.50,
+        "Canelazo": 3.00,
+        "Cerveza Club": 3.50,
+        "Cerveza Pilsener": 3.50,
+        "Cerveza 593": 3.50,
+        "Sangria": 4.00,
+        "Vino": 5.00,
+    },
 }
+
+# Menú plano para cálculos
+menu = {producto: precio
+        for seccion in menu_secciones.values()
+        for producto, precio in seccion.items()}
+
+# ==========================
+# FUNCIÓN ENVIAR CORREO
+# ==========================
+def enviar_factura_email(correo_destino, cliente, fecha, detalles, total):
+    try:
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = f"🧾 Tu factura de Restaurante 593 - {fecha}"
+        msg["From"] = EMAIL_REMITENTE
+        msg["To"] = correo_destino
+
+        # Construir tabla de detalles en HTML
+        filas = ""
+        for producto, cantidad, subtotal in detalles:
+            filas += f"""
+            <tr>
+                <td style="padding:8px 12px;border-bottom:1px solid #f0ebe3;">{producto}</td>
+                <td style="padding:8px 12px;border-bottom:1px solid #f0ebe3;text-align:center;">{cantidad}</td>
+                <td style="padding:8px 12px;border-bottom:1px solid #f0ebe3;text-align:right;">${subtotal:.2f}</td>
+            </tr>"""
+
+        html = f"""
+        <html><body style="font-family:Georgia,serif;background:#fdf6ee;margin:0;padding:20px;">
+        <div style="max-width:600px;margin:0 auto;background:white;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.1);">
+            <div style="background:#8B0000;color:white;padding:24px;text-align:center;">
+                <h1 style="margin:0;font-size:1.5em;letter-spacing:1px;">🧾 Factura</h1>
+                <p style="margin:4px 0 0;opacity:0.8;font-style:italic;">Restaurante 593 — Sabores del Ecuador</p>
+            </div>
+            <div style="padding:28px;">
+                <p style="color:#555;margin-bottom:6px;"><strong>👤 Cliente:</strong> {cliente}</p>
+                <p style="color:#555;margin-bottom:20px;"><strong>📅 Fecha:</strong> {fecha}</p>
+
+                <h2 style="color:#8B0000;font-size:1em;text-transform:uppercase;letter-spacing:1px;
+                           margin-bottom:12px;border-bottom:2px solid #8B0000;padding-bottom:8px;">
+                    Detalle del pedido
+                </h2>
+
+                <table style="width:100%;border-collapse:collapse;">
+                    <thead>
+                        <tr style="background:#8B0000;color:white;">
+                            <th style="padding:10px 12px;text-align:left;font-size:0.82em;">Producto</th>
+                            <th style="padding:10px 12px;text-align:center;font-size:0.82em;">Cant.</th>
+                            <th style="padding:10px 12px;text-align:right;font-size:0.82em;">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>{filas}</tbody>
+                    <tfoot>
+                        <tr style="background:#fff8f3;">
+                            <td colspan="2" style="padding:12px;font-weight:bold;color:#8B0000;
+                                border-top:2px solid #8B0000;">TOTAL</td>
+                            <td style="padding:12px;font-weight:bold;color:#8B0000;text-align:right;
+                                border-top:2px solid #8B0000;">${total:.2f}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+
+                <p style="margin-top:24px;color:#999;font-size:0.82em;text-align:center;
+                          font-family:Arial,sans-serif;">
+                    Gracias por tu pedido · Restaurante 593
+                </p>
+            </div>
+        </div>
+        </body></html>
+        """
+
+        msg.attach(MIMEText(html, "html"))
+
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as servidor:
+            servidor.login(EMAIL_REMITENTE, EMAIL_PASSWORD)
+            servidor.sendmail(EMAIL_REMITENTE, correo_destino, msg.as_string())
+
+        return True
+    except Exception as e:
+        print(f"Error al enviar correo: {e}")
+        return False
 
 # ==========================
 # RUTAS WEB
 # ==========================
 @app.route("/")
 def index():
-    return render_template("index.html", menu=menu)
+    return render_template("index.html", menu_secciones=menu_secciones)
 
 @app.route("/pedido", methods=["POST"])
 def pedido():
     cliente = request.form["cliente"]
+    correo  = request.form.get("correo", "")
     productos = request.form.getlist("producto")
     cantidades = request.form.getlist("cantidad")
 
@@ -101,14 +209,24 @@ def pedido():
 
     conexion = get_db()
     cursor = conexion.cursor()
-    cursor.execute("INSERT INTO ventas(cliente,fecha,total) VALUES(?,?,?)",
-                   (cliente, fecha, total))
+    cursor.execute("INSERT INTO ventas(cliente, correo, fecha, total) VALUES(?,?,?,?)",
+                   (cliente, correo, fecha, total))
     conexion.commit()
     conexion.close()
 
-    return render_template("factura.html", cliente=cliente, fecha=fecha, detalles=detalles, total=total)
+    # Enviar factura por correo si hay detalles
+    email_enviado = False
+    if correo and detalles:
+        email_enviado = enviar_factura_email(correo, cliente, fecha, detalles, total)
 
-# ✅ CORREGIDO: renombrada de index() a ventas()
+    return render_template("factura.html",
+                           cliente=cliente,
+                           correo=correo,
+                           fecha=fecha,
+                           detalles=detalles,
+                           total=total,
+                           email_enviado=email_enviado)
+
 @app.route("/ventas")
 def ventas():
     conexion = get_db()
@@ -125,4 +243,4 @@ def ventas():
 # EJECUCIÓN
 # ==========================
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=False)
