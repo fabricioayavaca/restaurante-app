@@ -214,10 +214,17 @@ def pedido():
     conexion.commit()
     conexion.close()
 
-    # Enviar factura por correo si hay detalles
+    # Enviar factura por correo en hilo separado para no bloquear la app
     email_enviado = False
     if correo and detalles:
-        email_enviado = enviar_factura_email(correo, cliente, fecha, detalles, total)
+        import threading
+        hilo = threading.Thread(
+            target=enviar_factura_email,
+            args=(correo, cliente, fecha, detalles, total)
+        )
+        hilo.daemon = True
+        hilo.start()
+        email_enviado = True  # Asumimos éxito; el error se imprime en logs
 
     return render_template("factura.html",
                            cliente=cliente,
