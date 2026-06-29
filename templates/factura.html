@@ -6,75 +6,114 @@
     <title>Factura - Restaurante 593</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; background: #f5f5f5; }
+
+        :root {
+            --rojo: #8B0000;
+            --crema: #fdf6ee;
+        }
+
+        body { font-family: 'Georgia', serif; background: var(--crema); }
 
         header {
-            background: #8B0000;
+            background: var(--rojo);
             color: white;
-            padding: 20px;
+            padding: 22px 20px;
             text-align: center;
         }
-        header h1 { font-size: 1.8em; }
+        header h1 { font-size: 1.6em; letter-spacing: 1px; }
+        header p { font-size: 0.85em; opacity: 0.75; margin-top: 3px; font-style: italic; }
 
         .container {
-            max-width: 700px;
-            margin: 30px auto;
-            padding: 0 20px;
+            max-width: 680px;
+            margin: 28px auto;
+            padding: 0 16px 40px;
         }
 
         .factura {
             background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 28px;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
         }
 
         .info-cliente {
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #8B0000;
+            margin-bottom: 22px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid var(--rojo);
         }
-        .info-cliente p { margin: 5px 0; color: #555; }
+        .info-cliente p { margin: 6px 0; color: #555; font-size: 0.95em; font-family: Arial, sans-serif; }
         .info-cliente strong { color: #333; }
 
-        h2 { color: #8B0000; margin-bottom: 15px; }
+        .email-nota {
+            background: #fff8f0;
+            border-left: 3px solid var(--rojo);
+            padding: 10px 14px;
+            border-radius: 0 8px 8px 0;
+            margin-top: 12px;
+            font-size: 0.85em;
+            color: #666;
+            font-family: Arial, sans-serif;
+        }
+
+        h2 {
+            color: var(--rojo);
+            margin-bottom: 14px;
+            font-size: 1.1em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
 
         table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-        thead { background: #8B0000; color: white; }
-        th, td { padding: 10px 15px; text-align: left; border-bottom: 1px solid #eee; }
+        thead { background: var(--rojo); color: white; }
+        th {
+            padding: 10px 13px;
+            text-align: left;
+            font-size: 0.83em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        td {
+            padding: 10px 13px;
+            border-bottom: 1px solid #f0ebe3;
+            font-family: Arial, sans-serif;
+            font-size: 0.93em;
+        }
         td:last-child, th:last-child { text-align: right; }
 
-        .total-row {
-            background: #fff8f8;
+        .total-row td {
+            color: var(--rojo);
             font-weight: bold;
-            font-size: 1.1em;
+            font-size: 1.05em;
+            border-top: 2px solid var(--rojo);
+            border-bottom: none;
+            background: #fff8f3;
         }
-        .total-row td { color: #8B0000; border-top: 2px solid #8B0000; }
 
         .botones {
             display: flex;
             gap: 10px;
-            margin-top: 20px;
+            margin-top: 22px;
         }
-
         .btn {
             flex: 1;
-            padding: 12px;
+            padding: 13px;
             border: none;
-            border-radius: 5px;
-            font-size: 1em;
+            border-radius: 8px;
+            font-size: 0.97em;
+            font-family: Georgia, serif;
             cursor: pointer;
             text-align: center;
             text-decoration: none;
             display: block;
+            transition: opacity 0.2s;
         }
-        .btn-volver { background: #8B0000; color: white; }
+        .btn-volver { background: var(--rojo); color: white; }
         .btn-ventas { background: #333; color: white; }
         .btn:hover { opacity: 0.85; }
 
         @media (max-width: 600px) {
-            .factura { padding: 15px; }
-            th, td { padding: 8px 8px; font-size: 0.9em; }
+            .factura { padding: 16px; }
+            th, td { padding: 8px 9px; font-size: 0.85em; }
             .botones { flex-direction: column; }
         }
     </style>
@@ -92,6 +131,14 @@
         <div class="info-cliente">
             <p><strong>👤 Cliente:</strong> {{ cliente }}</p>
             <p><strong>📅 Fecha:</strong> {{ fecha }}</p>
+            {% if correo %}
+            <p><strong>📧 Correo:</strong> {{ correo }}</p>
+            {% endif %}
+            {% if email_enviado %}
+            <div class="email-nota">✅ Factura enviada a <strong>{{ correo }}</strong></div>
+            {% elif correo %}
+            <div class="email-nota">⚠️ No se pudo enviar el correo. Revisa la configuración.</div>
+            {% endif %}
         </div>
 
         <h2>Detalle del pedido</h2>

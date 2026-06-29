@@ -6,121 +6,212 @@
     <title>Restaurante 593</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; background: #f5f5f5; }
 
+        :root {
+            --rojo: #8B0000;
+            --rojo-claro: #a00000;
+            --crema: #fdf6ee;
+            --gris: #f0f0f0;
+            --texto: #222;
+            --suave: #777;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background: var(--crema);
+            color: var(--texto);
+        }
+
+        /* HEADER */
         header {
-            background: #8B0000;
+            background: var(--rojo);
             color: white;
-            padding: 20px;
+            padding: 24px 20px 18px;
             text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.3);
         }
-        header h1 { font-size: 2em; }
-        header p { font-size: 1em; opacity: 0.8; margin-top: 5px; }
+        header h1 { font-size: 1.7em; letter-spacing: 1px; }
+        header p { font-size: 0.85em; opacity: 0.75; margin-top: 3px; font-style: italic; }
 
+        /* CONTAINER */
         .container {
-            max-width: 900px;
-            margin: 30px auto;
-            padding: 0 20px;
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 24px 16px 40px;
         }
 
-        form {
+        /* CAMPOS CLIENTE */
+        .campos-cliente {
             background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            padding: 22px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+            margin-bottom: 24px;
         }
-
-        .campo { margin-bottom: 20px; }
+        .campos-cliente h2 {
+            color: var(--rojo);
+            font-size: 1em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 14px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--rojo);
+        }
+        .fila-campos {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
         .campo label {
             display: block;
+            font-size: 0.82em;
             font-weight: bold;
+            color: var(--suave);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
             margin-bottom: 5px;
-            color: #333;
         }
         .campo input {
             width: 100%;
-            padding: 12px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-size: 1em;
+            padding: 11px 13px;
+            border: 1.5px solid #ddd;
+            border-radius: 7px;
+            font-size: 0.97em;
+            font-family: Arial, sans-serif;
+            background: #fafafa;
+            transition: border 0.2s;
+        }
+        .campo input:focus {
+            outline: none;
+            border-color: var(--rojo);
+            background: white;
         }
 
-        h2 { color: #8B0000; margin: 20px 0 10px; font-size: 1.3em; }
+        /* TABS DE SECCIONES */
+        .tabs-wrapper {
+            margin-bottom: 0;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .tabs {
+            display: flex;
+            gap: 6px;
+            padding-bottom: 0;
+            min-width: max-content;
+        }
+        .tab-btn {
+            padding: 9px 15px;
+            border: 2px solid transparent;
+            border-bottom: none;
+            border-radius: 8px 8px 0 0;
+            background: #e8ddd0;
+            color: #666;
+            cursor: pointer;
+            font-size: 0.82em;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+        .tab-btn:hover { background: #ddd0c0; color: var(--rojo); }
+        .tab-btn.active {
+            background: white;
+            color: var(--rojo);
+            border-color: #ddd;
+            border-bottom-color: white;
+            position: relative;
+            bottom: -1px;
+        }
+
+        /* SECCIONES DE MENÚ */
+        .seccion-menu {
+            display: none;
+            background: white;
+            border-radius: 0 8px 12px 12px;
+            border: 1px solid #ddd;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .seccion-menu.activa { display: block; }
 
         table { width: 100%; border-collapse: collapse; }
-        thead { background: #8B0000; color: white; }
-        th, td {
-            padding: 10px 15px;
+        thead { background: var(--rojo); color: white; }
+        th {
+            padding: 11px 14px;
             text-align: left;
-            border-bottom: 1px solid #eee;
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
-        tr:hover { background: #fff8f8; }
+        td {
+            padding: 10px 14px;
+            border-bottom: 1px solid #f0ebe3;
+            font-size: 0.93em;
+        }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: #fff8f3; }
+
+        .precio { color: var(--rojo); font-weight: bold; }
 
         .cantidad-input {
-            width: 60px;
-            padding: 8px 5px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
+            width: 58px;
+            padding: 7px 4px;
+            border: 1.5px solid #ccc;
+            border-radius: 6px;
             text-align: center;
-            font-size: 1em;
+            font-size: 0.97em;
+            font-family: Arial, sans-serif;
+            transition: border 0.2s;
+        }
+        .cantidad-input:focus {
+            outline: none;
+            border-color: var(--rojo);
         }
 
+        /* BOTÓN ENVIAR */
         .btn-enviar {
-            background: #8B0000;
+            background: var(--rojo);
             color: white;
-            padding: 14px 30px;
+            padding: 15px;
             border: none;
-            border-radius: 5px;
-            font-size: 1.1em;
+            border-radius: 10px;
+            font-size: 1.05em;
+            font-family: Georgia, serif;
             cursor: pointer;
             width: 100%;
-            margin-top: 20px;
+            margin-top: 8px;
+            letter-spacing: 0.5px;
+            transition: background 0.2s;
         }
-        .btn-enviar:hover { background: #a00000; }
+        .btn-enviar:hover { background: var(--rojo-claro); }
         .btn-enviar:active { background: #600000; }
 
         .ver-ventas {
             display: block;
             text-align: center;
-            margin: 20px auto;
-            color: #8B0000;
+            margin-top: 16px;
+            color: var(--rojo);
             text-decoration: none;
-            font-weight: bold;
-            font-size: 1.1em;
-            padding: 12px;
-            background: white;
+            font-size: 0.9em;
+            padding: 10px;
             border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: 1.5px solid var(--rojo);
+            background: white;
+            transition: all 0.2s;
         }
+        .ver-ventas:hover { background: var(--rojo); color: white; }
 
-        /* ===== RESPONSIVE MÓVIL ===== */
+        /* RESPONSIVE */
         @media (max-width: 600px) {
-            header h1 { font-size: 1.4em; }
-            header p { font-size: 0.85em; }
-
-            .container { padding: 0 10px; margin: 15px auto; }
-
-            form { padding: 15px; }
-
-            table { font-size: 0.82em; }
-            th, td { padding: 8px 6px; }
-
-            .cantidad-input {
-                width: 50px;
-                padding: 6px 3px;
-                font-size: 0.95em;
-            }
-
-            .btn-enviar {
-                padding: 14px;
-                font-size: 1em;
-            }
-
-            /* Tabla scrolleable si es muy ancha */
-            .tabla-wrapper {
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-            }
+            header h1 { font-size: 1.3em; }
+            .fila-campos { grid-template-columns: 1fr; }
+            th, td { padding: 9px 10px; font-size: 0.87em; }
+            .tab-btn { padding: 8px 11px; font-size: 0.78em; }
+            .cantidad-input { width: 50px; }
         }
     </style>
 </head>
@@ -132,49 +223,81 @@
 </header>
 
 <div class="container">
-    <form action="/pedido" method="POST">
+<form action="/pedido" method="POST">
 
-        <div class="campo">
-            <label for="cliente">👤 Nombre del cliente:</label>
-            <input type="text" id="cliente" name="cliente"
-                   placeholder="Ingresa tu nombre" required
-                   autocomplete="off">
+    <!-- DATOS DEL CLIENTE -->
+    <div class="campos-cliente">
+        <h2>👤 Datos del cliente</h2>
+        <div class="fila-campos">
+            <div class="campo">
+                <label for="cliente">Nombre</label>
+                <input type="text" id="cliente" name="cliente"
+                       placeholder="Tu nombre completo" required autocomplete="off">
+            </div>
+            <div class="campo">
+                <label for="correo">Correo electrónico</label>
+                <input type="email" id="correo" name="correo"
+                       placeholder="tu@correo.com" required autocomplete="off">
+            </div>
         </div>
+    </div>
 
-        <h2>🍴 Selecciona tu pedido:</h2>
-
-        <div class="tabla-wrapper">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Producto</th>
-                        <th>Precio</th>
-                        <th>Cant.</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for producto, precio in menu.items() %}
-                    <tr>
-                        <td>{{ producto }}</td>
-                        <td>${{ "%.2f"|format(precio) }}</td>
-                        <td>
-                            <input type="hidden" name="producto" value="{{ producto }}">
-                            <input type="number" name="cantidad"
-                                   class="cantidad-input"
-                                   min="0" value="0"
-                                   inputmode="numeric">
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <!-- TABS DE SECCIONES -->
+    <div class="tabs-wrapper">
+        <div class="tabs">
+            {% for seccion in menu_secciones.keys() %}
+            <button type="button" class="tab-btn {% if loop.first %}active{% endif %}"
+                    onclick="mostrarSeccion('{{ loop.index }}', this)">
+                {{ seccion }}
+            </button>
+            {% endfor %}
         </div>
+    </div>
 
-        <button type="submit" class="btn-enviar">✅ Registrar Pedido</button>
-    </form>
+    <!-- TABLAS POR SECCIÓN -->
+    {% for seccion, items in menu_secciones.items() %}
+    <div class="seccion-menu {% if loop.first %}activa{% endif %}" id="sec-{{ loop.index }}">
+        <table>
+            <thead>
+                <tr>
+                    <th>Plato</th>
+                    <th>Precio</th>
+                    <th>Cant.</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for producto, precio in items.items() %}
+                <tr>
+                    <td>{{ producto }}</td>
+                    <td class="precio">${{ "%.2f"|format(precio) }}</td>
+                    <td>
+                        <input type="hidden" name="producto" value="{{ producto }}">
+                        <input type="number" name="cantidad"
+                               class="cantidad-input"
+                               min="0" value="0"
+                               inputmode="numeric">
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endfor %}
 
-    <a href="/ventas" class="ver-ventas">📊 Ver historial de ventas</a>
+    <button type="submit" class="btn-enviar">✅ Registrar Pedido y Enviar Factura</button>
+</form>
+
+<a href="/ventas" class="ver-ventas">📊 Ver historial de ventas</a>
 </div>
+
+<script>
+function mostrarSeccion(id, btn) {
+    document.querySelectorAll('.seccion-menu').forEach(s => s.classList.remove('activa'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('sec-' + id).classList.add('activa');
+    btn.classList.add('active');
+}
+</script>
 
 </body>
 </html>
