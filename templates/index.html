@@ -1,246 +1,303 @@
-from flask import Flask, render_template, request
-import sqlite3
-from datetime import datetime
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-import os
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurante 593</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
-app = Flask(__name__)
+        :root {
+            --rojo: #8B0000;
+            --rojo-claro: #a00000;
+            --crema: #fdf6ee;
+            --gris: #f0f0f0;
+            --texto: #222;
+            --suave: #777;
+        }
 
-# ==========================
-# CONFIGURACIÓN DE CORREO
-# Cambia estos valores por tu cuenta Gmail
-# ==========================
-EMAIL_REMITENTE = os.environ.get("EMAIL_REMITENTE", "tucorreo@gmail.com")
-EMAIL_PASSWORD  = os.environ.get("EMAIL_PASSWORD", "tu_contrasena_de_app")
+        body {
+            font-family: 'Georgia', serif;
+            background: var(--crema);
+            color: var(--texto);
+        }
 
-# ==========================
-# BASE DE DATOS
-# ==========================
-def get_db():
-    conexion = sqlite3.connect("restaurante.db")
-    conexion.row_factory = sqlite3.Row
-    return conexion
+        /* HEADER */
+        header {
+            background: var(--rojo);
+            color: white;
+            padding: 24px 20px 18px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.3);
+        }
+        header h1 { font-size: 1.7em; letter-spacing: 1px; }
+        header p { font-size: 0.85em; opacity: 0.75; margin-top: 3px; font-style: italic; }
 
-conexion = get_db()
-cursor = conexion.cursor()
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS ventas(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    cliente TEXT NOT NULL,
-    correo TEXT,
-    fecha TEXT NOT NULL,
-    total REAL NOT NULL
-)
-""")
-# Agregar columna correo si no existe (compatibilidad con bases de datos antiguas)
-try:
-    cursor.execute("ALTER TABLE ventas ADD COLUMN correo TEXT")
-except:
-    pass
-conexion.commit()
-conexion.close()
+        /* CONTAINER */
+        .container {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 24px 16px 40px;
+        }
 
-# ==========================
-# MENÚ ORGANIZADO POR SECCIONES
-# ==========================
-menu_secciones = {
-    "🍽️ Platos Fuertes": {
-        "Cuy Asado con Papas y Aji": 12.00,
-        "Hornado con Mote": 8.00,
-        "Churrasco": 7.50,
-        "Arroz Marinero": 9.00,
-        "Maito": 6.00,
-        "Tonga de Pollo": 5.00,
-        "Encocado de Pescado": 7.00,
-        "Seco de Chivo": 8.50,
-    },
-    "🥣 Entradas y Sopas": {
-        "Ceviche de Camaron": 6.50,
-        "Ceviche Mixto": 7.50,
-        "Tigrillo": 3.50,
-        "Encebollado Tradicional": 4.00,
-        "Bolon": 2.50,
-        "Caldo Bola": 5.50,
-        "Locro de Papas": 4.50,
-        "Caldo de Pollo": 4.00,
-    },
-    "🍟 Acompañamientos": {
-        "Menestra": 1.50,
-        "Choclo": 1.00,
-        "Maduro con Queso": 2.00,
-        "Patacones": 2.00,
-        "Chifles": 1.50,
-        "Huevo": 0.50,
-        "Papas Fritas": 2.00,
-    },
-    "🍮 Postres": {
-        "Higos con Queso": 3.00,
-        "Helado de Paila": 2.50,
-        "Espumilla": 2.00,
-        "Pastel de Chonta": 3.50,
-    },
-    "🥤 Bebidas": {
-        "Agua Sin Gas": 1.00,
-        "Agua Con Gas": 1.20,
-        "Cafe": 1.50,
-        "Jugo Mora": 2.00,
-        "Limonada": 2.00,
-        "Maracuya": 2.00,
-        "Naranjilla": 2.00,
-        "Horchata": 2.00,
-        "Coca Cola": 1.50,
-        "Sprite": 1.50,
-        "Fanta": 1.50,
-        "Canelazo": 3.00,
-        "Cerveza Club": 3.50,
-        "Cerveza Pilsener": 3.50,
-        "Cerveza 593": 3.50,
-        "Sangria": 4.00,
-        "Vino": 5.00,
-    },
-}
+        /* CAMPOS CLIENTE */
+        .campos-cliente {
+            background: white;
+            border-radius: 12px;
+            padding: 22px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+            margin-bottom: 24px;
+        }
+        .campos-cliente h2 {
+            color: var(--rojo);
+            font-size: 1em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 14px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--rojo);
+        }
+        .fila-campos {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+        .campo label {
+            display: block;
+            font-size: 0.82em;
+            font-weight: bold;
+            color: var(--suave);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+        }
+        .campo input {
+            width: 100%;
+            padding: 11px 13px;
+            border: 1.5px solid #ddd;
+            border-radius: 7px;
+            font-size: 0.97em;
+            font-family: Arial, sans-serif;
+            background: #fafafa;
+            transition: border 0.2s;
+        }
+        .campo input:focus {
+            outline: none;
+            border-color: var(--rojo);
+            background: white;
+        }
 
-# Menú plano para cálculos
-menu = {producto: precio
-        for seccion in menu_secciones.values()
-        for producto, precio in seccion.items()}
+        /* TABS DE SECCIONES */
+        .tabs-wrapper {
+            margin-bottom: 0;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .tabs {
+            display: flex;
+            gap: 6px;
+            padding-bottom: 0;
+            min-width: max-content;
+        }
+        .tab-btn {
+            padding: 9px 15px;
+            border: 2px solid transparent;
+            border-bottom: none;
+            border-radius: 8px 8px 0 0;
+            background: #e8ddd0;
+            color: #666;
+            cursor: pointer;
+            font-size: 0.82em;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+        .tab-btn:hover { background: #ddd0c0; color: var(--rojo); }
+        .tab-btn.active {
+            background: white;
+            color: var(--rojo);
+            border-color: #ddd;
+            border-bottom-color: white;
+            position: relative;
+            bottom: -1px;
+        }
 
-# ==========================
-# FUNCIÓN ENVIAR CORREO
-# ==========================
-def enviar_factura_email(correo_destino, cliente, fecha, detalles, total):
-    try:
-        msg = MIMEMultipart("alternative")
-        msg["Subject"] = f"🧾 Tu factura de Restaurante 593 - {fecha}"
-        msg["From"] = EMAIL_REMITENTE
-        msg["To"] = correo_destino
+        /* SECCIONES DE MENÚ */
+        .seccion-menu {
+            display: none;
+            background: white;
+            border-radius: 0 8px 12px 12px;
+            border: 1px solid #ddd;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .seccion-menu.activa { display: block; }
 
-        # Construir tabla de detalles en HTML
-        filas = ""
-        for producto, cantidad, subtotal in detalles:
-            filas += f"""
-            <tr>
-                <td style="padding:8px 12px;border-bottom:1px solid #f0ebe3;">{producto}</td>
-                <td style="padding:8px 12px;border-bottom:1px solid #f0ebe3;text-align:center;">{cantidad}</td>
-                <td style="padding:8px 12px;border-bottom:1px solid #f0ebe3;text-align:right;">${subtotal:.2f}</td>
-            </tr>"""
+        table { width: 100%; border-collapse: collapse; }
+        thead { background: var(--rojo); color: white; }
+        th {
+            padding: 11px 14px;
+            text-align: left;
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        td {
+            padding: 10px 14px;
+            border-bottom: 1px solid #f0ebe3;
+            font-size: 0.93em;
+        }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: #fff8f3; }
 
-        html = f"""
-        <html><body style="font-family:Georgia,serif;background:#fdf6ee;margin:0;padding:20px;">
-        <div style="max-width:600px;margin:0 auto;background:white;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.1);">
-            <div style="background:#8B0000;color:white;padding:24px;text-align:center;">
-                <h1 style="margin:0;font-size:1.5em;letter-spacing:1px;">🧾 Factura</h1>
-                <p style="margin:4px 0 0;opacity:0.8;font-style:italic;">Restaurante 593 — Sabores del Ecuador</p>
+        .precio { color: var(--rojo); font-weight: bold; }
+
+        .cantidad-input {
+            width: 58px;
+            padding: 7px 4px;
+            border: 1.5px solid #ccc;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 0.97em;
+            font-family: Arial, sans-serif;
+            transition: border 0.2s;
+        }
+        .cantidad-input:focus {
+            outline: none;
+            border-color: var(--rojo);
+        }
+
+        /* BOTÓN ENVIAR */
+        .btn-enviar {
+            background: var(--rojo);
+            color: white;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.05em;
+            font-family: Georgia, serif;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 8px;
+            letter-spacing: 0.5px;
+            transition: background 0.2s;
+        }
+        .btn-enviar:hover { background: var(--rojo-claro); }
+        .btn-enviar:active { background: #600000; }
+
+        .ver-ventas {
+            display: block;
+            text-align: center;
+            margin-top: 16px;
+            color: var(--rojo);
+            text-decoration: none;
+            font-size: 0.9em;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1.5px solid var(--rojo);
+            background: white;
+            transition: all 0.2s;
+        }
+        .ver-ventas:hover { background: var(--rojo); color: white; }
+
+        /* RESPONSIVE */
+        @media (max-width: 600px) {
+            header h1 { font-size: 1.3em; }
+            .fila-campos { grid-template-columns: 1fr; }
+            th, td { padding: 9px 10px; font-size: 0.87em; }
+            .tab-btn { padding: 8px 11px; font-size: 0.78em; }
+            .cantidad-input { width: 50px; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>🍽️ Restaurante 593</h1>
+    <p>Sabores del Ecuador</p>
+</header>
+
+<div class="container">
+<form action="/pedido" method="POST">
+
+    <!-- DATOS DEL CLIENTE -->
+    <div class="campos-cliente">
+        <h2>👤 Datos del cliente</h2>
+        <div class="fila-campos">
+            <div class="campo">
+                <label for="cliente">Nombre</label>
+                <input type="text" id="cliente" name="cliente"
+                       placeholder="Tu nombre completo" required autocomplete="off">
             </div>
-            <div style="padding:28px;">
-                <p style="color:#555;margin-bottom:6px;"><strong>👤 Cliente:</strong> {cliente}</p>
-                <p style="color:#555;margin-bottom:20px;"><strong>📅 Fecha:</strong> {fecha}</p>
-
-                <h2 style="color:#8B0000;font-size:1em;text-transform:uppercase;letter-spacing:1px;
-                           margin-bottom:12px;border-bottom:2px solid #8B0000;padding-bottom:8px;">
-                    Detalle del pedido
-                </h2>
-
-                <table style="width:100%;border-collapse:collapse;">
-                    <thead>
-                        <tr style="background:#8B0000;color:white;">
-                            <th style="padding:10px 12px;text-align:left;font-size:0.82em;">Producto</th>
-                            <th style="padding:10px 12px;text-align:center;font-size:0.82em;">Cant.</th>
-                            <th style="padding:10px 12px;text-align:right;font-size:0.82em;">Subtotal</th>
-                        </tr>
-                    </thead>
-                    <tbody>{filas}</tbody>
-                    <tfoot>
-                        <tr style="background:#fff8f3;">
-                            <td colspan="2" style="padding:12px;font-weight:bold;color:#8B0000;
-                                border-top:2px solid #8B0000;">TOTAL</td>
-                            <td style="padding:12px;font-weight:bold;color:#8B0000;text-align:right;
-                                border-top:2px solid #8B0000;">${total:.2f}</td>
-                        </tr>
-                    </tfoot>
-                </table>
-
-                <p style="margin-top:24px;color:#999;font-size:0.82em;text-align:center;
-                          font-family:Arial,sans-serif;">
-                    Gracias por tu pedido · Restaurante 593
-                </p>
+            <div class="campo">
+                <label for="correo">Correo electrónico</label>
+                <input type="email" id="correo" name="correo"
+                       placeholder="tu@correo.com" required autocomplete="off">
             </div>
         </div>
-        </body></html>
-        """
+    </div>
 
-        msg.attach(MIMEText(html, "html"))
+    <!-- TABS DE SECCIONES -->
+    <div class="tabs-wrapper">
+        <div class="tabs">
+            {% for seccion in menu_secciones.keys() %}
+            <button type="button" class="tab-btn {% if loop.first %}active{% endif %}"
+                    onclick="mostrarSeccion('{{ loop.index }}', this)">
+                {{ seccion }}
+            </button>
+            {% endfor %}
+        </div>
+    </div>
 
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as servidor:
-            servidor.login(EMAIL_REMITENTE, EMAIL_PASSWORD)
-            servidor.sendmail(EMAIL_REMITENTE, correo_destino, msg.as_string())
+    <!-- TABLAS POR SECCIÓN -->
+    {% for seccion, items in menu_secciones.items() %}
+    <div class="seccion-menu {% if loop.first %}activa{% endif %}" id="sec-{{ loop.index }}">
+        <table>
+            <thead>
+                <tr>
+                    <th>Plato</th>
+                    <th>Precio</th>
+                    <th>Cant.</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for producto, precio in items.items() %}
+                <tr>
+                    <td>{{ producto }}</td>
+                    <td class="precio">${{ "%.2f"|format(precio) }}</td>
+                    <td>
+                        <input type="hidden" name="producto" value="{{ producto }}">
+                        <input type="number" name="cantidad"
+                               class="cantidad-input"
+                               min="0" value="0"
+                               inputmode="numeric">
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endfor %}
 
-        return True
-    except Exception as e:
-        print(f"Error al enviar correo: {e}")
-        return False
+    <button type="submit" class="btn-enviar">✅ Registrar Pedido y Enviar Factura</button>
+</form>
 
-# ==========================
-# RUTAS WEB
-# ==========================
-@app.route("/")
-def index():
-    return render_template("index.html", menu_secciones=menu_secciones)
+<a href="/ventas" class="ver-ventas">📊 Ver historial de ventas</a>
+</div>
 
-@app.route("/pedido", methods=["POST"])
-def pedido():
-    cliente = request.form["cliente"]
-    correo  = request.form.get("correo", "")
-    productos = request.form.getlist("producto")
-    cantidades = request.form.getlist("cantidad")
+<script>
+function mostrarSeccion(id, btn) {
+    document.querySelectorAll('.seccion-menu').forEach(s => s.classList.remove('activa'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('sec-' + id).classList.add('activa');
+    btn.classList.add('active');
+}
+</script>
 
-    total = 0
-    detalles = []
-
-    for producto, cantidad in zip(productos, cantidades):
-        if cantidad and int(cantidad) > 0:
-            subtotal = menu[producto] * int(cantidad)
-            detalles.append((producto, int(cantidad), subtotal))
-            total += subtotal
-
-    fecha = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-
-    conexion = get_db()
-    cursor = conexion.cursor()
-    cursor.execute("INSERT INTO ventas(cliente, correo, fecha, total) VALUES(?,?,?,?)",
-                   (cliente, correo, fecha, total))
-    conexion.commit()
-    conexion.close()
-
-    # Enviar factura por correo si hay detalles
-    email_enviado = False
-    if correo and detalles:
-        email_enviado = enviar_factura_email(correo, cliente, fecha, detalles, total)
-
-    return render_template("factura.html",
-                           cliente=cliente,
-                           correo=correo,
-                           fecha=fecha,
-                           detalles=detalles,
-                           total=total,
-                           email_enviado=email_enviado)
-
-@app.route("/ventas")
-def ventas():
-    conexion = get_db()
-    cursor = conexion.cursor()
-    cursor.execute("SELECT * FROM ventas ORDER BY id DESC")
-    registros = cursor.fetchall()
-    conexion.close()
-
-    total_general = sum([r["total"] for r in registros])
-
-    return render_template("ventas.html", registros=registros, total_general=total_general)
-
-# ==========================
-# EJECUCIÓN
-# ==========================
-if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000, debug=False)
+</body>
+</html>
