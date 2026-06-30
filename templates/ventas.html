@@ -24,7 +24,7 @@
         header p { font-size: 0.85em; opacity: 0.75; margin-top: 3px; font-style: italic; }
 
         .container {
-            max-width: 860px;
+            max-width: 900px;
             margin: 28px auto;
             padding: 0 16px 40px;
         }
@@ -68,6 +68,19 @@
 
         .total-td { color: var(--rojo); font-weight: bold; }
 
+        .btn-eliminar {
+            background: #fff0f0;
+            color: var(--rojo);
+            border: 1.5px solid var(--rojo);
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 0.85em;
+            font-family: Arial, sans-serif;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-eliminar:hover { background: var(--rojo); color: white; }
+
         .sin-ventas {
             text-align: center;
             padding: 50px 20px;
@@ -93,8 +106,9 @@
         .btn-volver:hover { background: #a00000; }
 
         @media (max-width: 600px) {
-            th, td { padding: 9px 10px; font-size: 0.82em; }
+            th, td { padding: 9px 8px; font-size: 0.78em; }
             .resumen p { font-size: 1.6em; }
+            .btn-eliminar { padding: 5px 8px; font-size: 0.78em; }
         }
     </style>
 </head>
@@ -122,16 +136,20 @@
                     <th>Correo</th>
                     <th>Fecha</th>
                     <th>Total</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody>
                 {% for r in registros %}
-                <tr>
+                <tr id="fila-{{ r['id'] }}">
                     <td>{{ r["id"] }}</td>
                     <td>{{ r["cliente"] }}</td>
                     <td>{{ r["correo"] if r["correo"] else "—" }}</td>
                     <td>{{ r["fecha"] }}</td>
                     <td class="total-td">${{ "%.2f"|format(r["total"]) }}</td>
+                    <td>
+                        <button class="btn-eliminar" onclick="eliminarVenta({{ r['id'] }})">🗑️ Eliminar</button>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -143,9 +161,26 @@
         {% endif %}
     </div>
 
-    <a href="/" class="btn-volver">🍽️ Volver al Menú</a>
+    <a href="/menu" class="btn-volver">🍽️ Volver al Menú</a>
 
 </div>
+
+<script>
+function eliminarVenta(id) {
+    if (!confirm('¿Seguro que deseas eliminar este registro?')) return;
+
+    fetch('/eliminar-venta/' + id, { method: 'POST' })
+        .then(res => res.json())
+        .then(data => {
+            if (data.exito) {
+                document.getElementById('fila-' + id).remove();
+            } else {
+                alert('No se pudo eliminar el registro');
+            }
+        })
+        .catch(() => alert('Error de conexión'));
+}
+</script>
 
 </body>
 </html>

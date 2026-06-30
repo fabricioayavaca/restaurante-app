@@ -89,32 +89,26 @@
             background: #fff8f3;
         }
 
-        .botones {
-            display: flex;
-            gap: 10px;
-            margin-top: 22px;
-        }
         .btn {
-            flex: 1;
-            padding: 13px;
+            display: block;
+            width: 100%;
+            padding: 14px;
             border: none;
-            border-radius: 8px;
-            font-size: 0.97em;
+            border-radius: 10px;
+            font-size: 1em;
             font-family: Georgia, serif;
             cursor: pointer;
             text-align: center;
             text-decoration: none;
-            display: block;
+            margin-top: 22px;
             transition: opacity 0.2s;
         }
         .btn-volver { background: var(--rojo); color: white; }
-        .btn-ventas { background: #333; color: white; }
         .btn:hover { opacity: 0.85; }
 
         @media (max-width: 600px) {
             .factura { padding: 16px; }
             th, td { padding: 8px 9px; font-size: 0.85em; }
-            .botones { flex-direction: column; }
         }
     </style>
 </head>
@@ -166,10 +160,7 @@
             </tbody>
         </table>
 
-        <div class="botones">
-            <a href="/" class="btn btn-volver">🍽️ Nuevo Pedido</a>
-            <a href="/ventas" class="btn btn-ventas">📊 Ver Ventas</a>
-        </div>
+        <a href="/menu" class="btn btn-volver">🍽️ Nuevo Pedido</a>
 
     </div>
 </div>

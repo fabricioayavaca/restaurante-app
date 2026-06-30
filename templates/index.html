@@ -22,7 +22,6 @@
             color: var(--texto);
         }
 
-        /* HEADER */
         header {
             background: var(--rojo);
             color: white;
@@ -36,14 +35,12 @@
         header h1 { font-size: 1.7em; letter-spacing: 1px; }
         header p { font-size: 0.85em; opacity: 0.75; margin-top: 3px; font-style: italic; }
 
-        /* CONTAINER */
         .container {
             max-width: 860px;
             margin: 0 auto;
             padding: 24px 16px 40px;
         }
 
-        /* CAMPOS CLIENTE */
         .campos-cliente {
             background: white;
             border-radius: 12px;
@@ -90,16 +87,13 @@
             background: white;
         }
 
-        /* TABS DE SECCIONES */
         .tabs-wrapper {
-            margin-bottom: 0;
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
         }
         .tabs {
             display: flex;
             gap: 6px;
-            padding-bottom: 0;
             min-width: max-content;
         }
         .tab-btn {
@@ -126,7 +120,6 @@
             bottom: -1px;
         }
 
-        /* SECCIONES DE MENÚ */
         .seccion-menu {
             display: none;
             background: white;
@@ -172,7 +165,6 @@
             border-color: var(--rojo);
         }
 
-        /* BOTÓN ENVIAR */
         .btn-enviar {
             background: var(--rojo);
             color: white;
@@ -190,22 +182,6 @@
         .btn-enviar:hover { background: var(--rojo-claro); }
         .btn-enviar:active { background: #600000; }
 
-        .ver-ventas {
-            display: block;
-            text-align: center;
-            margin-top: 16px;
-            color: var(--rojo);
-            text-decoration: none;
-            font-size: 0.9em;
-            padding: 10px;
-            border-radius: 8px;
-            border: 1.5px solid var(--rojo);
-            background: white;
-            transition: all 0.2s;
-        }
-        .ver-ventas:hover { background: var(--rojo); color: white; }
-
-        /* RESPONSIVE */
         @media (max-width: 600px) {
             header h1 { font-size: 1.3em; }
             .fila-campos { grid-template-columns: 1fr; }
@@ -225,7 +201,6 @@
 <div class="container">
 <form action="/pedido" method="POST">
 
-    <!-- DATOS DEL CLIENTE -->
     <div class="campos-cliente">
         <h2>👤 Datos del cliente</h2>
         <div class="fila-campos">
@@ -242,7 +217,6 @@
         </div>
     </div>
 
-    <!-- TABS DE SECCIONES -->
     <div class="tabs-wrapper">
         <div class="tabs">
             {% for seccion in menu_secciones.keys() %}
@@ -254,7 +228,6 @@
         </div>
     </div>
 
-    <!-- TABLAS POR SECCIÓN -->
     {% for seccion, items in menu_secciones.items() %}
     <div class="seccion-menu {% if loop.first %}activa{% endif %}" id="sec-{{ loop.index }}">
         <table>
@@ -274,7 +247,7 @@
                         <input type="hidden" name="producto" value="{{ producto }}">
                         <input type="number" name="cantidad"
                                class="cantidad-input"
-                               min="0" value="0"
+                               min="0" max="50" value="0"
                                inputmode="numeric">
                     </td>
                 </tr>
@@ -286,8 +259,6 @@
 
     <button type="submit" class="btn-enviar">✅ Registrar Pedido y Enviar Factura</button>
 </form>
-
-<a href="/ventas" class="ver-ventas">📊 Ver historial de ventas</a>
 </div>
 
 <script>

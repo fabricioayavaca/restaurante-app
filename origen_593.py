@@ -1,17 +1,17 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, session, jsonify
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 import os
 import requests
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("SECRET_KEY", "clave-secreta-cambiar-en-produccion")
 
 # ==========================
-# CONFIGURACIÓN DE CORREO
-# Cambia estos valores por tu cuenta Gmail
+# CONFIGURACIÓN
 # ==========================
 EMAIL_REMITENTE = os.environ.get("EMAIL_REMITENTE", "tucorreo@gmail.com")
-EMAIL_PASSWORD  = os.environ.get("EMAIL_PASSWORD", "tu_contrasena_de_app")
+CLAVE_MESERO = os.environ.get("CLAVE_MESERO", "1234")
 
 # ==========================
 # BASE DE DATOS
@@ -32,7 +32,6 @@ CREATE TABLE IF NOT EXISTS ventas(
     total REAL NOT NULL
 )
 """)
-# Agregar columna correo si no existe (compatibilidad con bases de datos antiguas)
 try:
     cursor.execute("ALTER TABLE ventas ADD COLUMN correo TEXT")
 except:
@@ -100,18 +99,15 @@ menu_secciones = {
     },
 }
 
-# Menú plano para cálculos
 menu = {producto: precio
         for seccion in menu_secciones.values()
         for producto, precio in seccion.items()}
 
 # ==========================
-# FUNCIÓN ENVIAR CORREO
+# FUNCIÓN ENVIAR CORREO (Brevo)
 # ==========================
 def enviar_factura_email(correo_destino, cliente, fecha, detalles, total):
     try:
-        import requests
-
         filas = ""
         for producto, cantidad, subtotal in detalles:
             filas += f"""
@@ -183,7 +179,23 @@ def enviar_factura_email(correo_destino, cliente, fecha, detalles, total):
 # ==========================
 # RUTAS WEB
 # ==========================
+
+# Página de bienvenida (Cliente / Mesero)
 @app.route("/")
+def bienvenida():
+    return render_template("bienvenida.html")
+
+# Verifica la clave del mesero
+@app.route("/verificar-mesero")
+def verificar_mesero():
+    clave = request.args.get("clave", "")
+    if clave == CLAVE_MESERO:
+        session["es_mesero"] = True
+        return redirect("/ventas")
+    return redirect("/?error=1")
+
+# Menú para clientes
+@app.route("/menu")
 def index():
     return render_template("index.html", menu_secciones=menu_secciones)
 
@@ -203,7 +215,6 @@ def pedido():
             detalles.append((producto, int(cantidad), subtotal))
             total += subtotal
 
-    from datetime import timezone, timedelta
     zona_ecuador = timezone(timedelta(hours=-5))
     fecha = datetime.now(zona_ecuador).strftime("%d/%m/%Y %H:%M:%S")
 
@@ -214,17 +225,9 @@ def pedido():
     conexion.commit()
     conexion.close()
 
-    # Enviar factura por correo en hilo separado para no bloquear la app
     email_enviado = False
     if correo and detalles:
-        import threading
-        hilo = threading.Thread(
-            target=enviar_factura_email,
-            args=(correo, cliente, fecha, detalles, total)
-        )
-        hilo.daemon = True
-        hilo.start()
-        email_enviado = True  # Asumimos éxito; el error se imprime en logs
+        email_enviado = enviar_factura_email(correo, cliente, fecha, detalles, total)
 
     return render_template("factura.html",
                            cliente=cliente,
@@ -234,8 +237,12 @@ def pedido():
                            total=total,
                            email_enviado=email_enviado)
 
+# Historial de ventas — solo accesible si pasó por la clave de mesero
 @app.route("/ventas")
 def ventas():
+    if not session.get("es_mesero"):
+        return redirect("/")
+
     conexion = get_db()
     cursor = conexion.cursor()
     cursor.execute("SELECT * FROM ventas ORDER BY id DESC")
@@ -245,6 +252,20 @@ def ventas():
     total_general = sum([r["total"] for r in registros])
 
     return render_template("ventas.html", registros=registros, total_general=total_general)
+
+# Eliminar una venta (solo mesero)
+@app.route("/eliminar-venta/<int:venta_id>", methods=["POST"])
+def eliminar_venta(venta_id):
+    if not session.get("es_mesero"):
+        return jsonify({"exito": False}), 403
+
+    conexion = get_db()
+    cursor = conexion.cursor()
+    cursor.execute("DELETE FROM ventas WHERE id = ?", (venta_id,))
+    conexion.commit()
+    conexion.close()
+
+    return jsonify({"exito": True})
 
 # ==========================
 # EJECUCIÓN

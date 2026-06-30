@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurante 593</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --rojo: #8B0000;
+            --rojo-claro: #a00000;
+            --crema: #fdf6ee;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background: var(--crema);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .tarjeta {
+            background: white;
+            max-width: 400px;
+            width: 100%;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+            text-align: center;
+        }
+
+        .encabezado {
+            background: var(--rojo);
+            color: white;
+            padding: 36px 24px 28px;
+        }
+        .encabezado h1 { font-size: 1.6em; letter-spacing: 1px; }
+        .encabezado p { font-size: 0.9em; opacity: 0.8; margin-top: 6px; font-style: italic; }
+
+        .opciones { padding: 30px 24px; }
+        .opciones p {
+            color: #777;
+            font-size: 0.9em;
+            margin-bottom: 22px;
+            font-family: Arial, sans-serif;
+        }
+
+        .btn-opcion {
+            display: block;
+            width: 100%;
+            padding: 16px;
+            margin-bottom: 14px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.05em;
+            font-family: Georgia, serif;
+            cursor: pointer;
+            text-decoration: none;
+            transition: opacity 0.2s, transform 0.1s;
+        }
+        .btn-opcion:active { transform: scale(0.98); }
+
+        .btn-cliente {
+            background: var(--rojo);
+            color: white;
+        }
+        .btn-cliente:hover { background: var(--rojo-claro); }
+
+        .btn-mesero {
+            background: white;
+            color: var(--rojo);
+            border: 2px solid var(--rojo);
+        }
+        .btn-mesero:hover { background: #fff5f5; }
+
+        /* Modal clave mesero */
+        .overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            padding: 20px;
+        }
+        .overlay.activo { display: flex; }
+
+        .modal {
+            background: white;
+            border-radius: 14px;
+            padding: 28px 24px;
+            max-width: 340px;
+            width: 100%;
+            text-align: center;
+        }
+        .modal h2 { color: var(--rojo); font-size: 1.2em; margin-bottom: 6px; }
+        .modal p { color: #888; font-size: 0.85em; margin-bottom: 18px; font-family: Arial, sans-serif; }
+
+        .modal input {
+            width: 100%;
+            padding: 13px;
+            border: 1.5px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            text-align: center;
+            letter-spacing: 3px;
+            font-family: Arial, sans-serif;
+            margin-bottom: 14px;
+        }
+        .modal input:focus { outline: none; border-color: var(--rojo); }
+
+        .error-clave {
+            color: var(--rojo);
+            font-size: 0.82em;
+            margin-bottom: 12px;
+            font-family: Arial, sans-serif;
+            display: none;
+        }
+        .error-clave.activo { display: block; }
+
+        .modal-botones { display: flex; gap: 10px; }
+        .modal-botones button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95em;
+            font-family: Georgia, serif;
+            cursor: pointer;
+        }
+        .btn-confirmar { background: var(--rojo); color: white; }
+        .btn-cancelar { background: #eee; color: #555; }
+    </style>
+</head>
+<body>
+
+<div class="tarjeta">
+    <div class="encabezado">
+        <h1>🍽️ Restaurante 593</h1>
+        <p>Sabores del Ecuador</p>
+    </div>
+    <div class="opciones">
+        <p>¿Cómo deseas ingresar?</p>
+        <a href="/menu" class="btn-opcion btn-cliente">👤 Soy Cliente</a>
+        <button type="button" class="btn-opcion btn-mesero" onclick="abrirModal()">🧑‍🍳 Soy Mesero / Admin</button>
+    </div>
+</div>
+
+<div class="overlay" id="overlay">
+    <div class="modal">
+        <h2>🔒 Acceso Mesero</h2>
+        <p>Ingresa la clave de acceso</p>
+        <input type="password" id="clave" inputmode="numeric" placeholder="••••" maxlength="20" autocomplete="off">
+        <div class="error-clave" id="errorClave">Clave incorrecta, intenta de nuevo</div>
+        <div class="modal-botones">
+            <button class="btn-cancelar" onclick="cerrarModal()">Cancelar</button>
+            <button class="btn-confirmar" onclick="verificarClave()">Ingresar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function abrirModal() {
+    document.getElementById('overlay').classList.add('activo');
+    document.getElementById('clave').focus();
+}
+function cerrarModal() {
+    document.getElementById('overlay').classList.remove('activo');
+    document.getElementById('clave').value = '';
+    document.getElementById('errorClave').classList.remove('activo');
+}
+function verificarClave() {
+    const clave = document.getElementById('clave').value;
+    window.location.href = '/verificar-mesero?clave=' + encodeURIComponent(clave);
+}
+document.getElementById('clave').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') verificarClave();
+});
+</script>
+
+</body>
+</html>
