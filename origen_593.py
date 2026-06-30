@@ -194,9 +194,11 @@ def verificar_mesero():
         return redirect("/ventas")
     return redirect("/?error=1")
 
-# Menú para clientes
+# Menú para clientes (cierra sesión de mesero si la hubiera)
 @app.route("/menu")
 def index():
+    if request.args.get("salir") == "1":
+        session.pop("es_mesero", None)
     es_mesero = session.get("es_mesero", False)
     return render_template("index.html", menu_secciones=menu_secciones, es_mesero=es_mesero)
 
