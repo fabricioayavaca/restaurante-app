@@ -197,7 +197,8 @@ def verificar_mesero():
 # Menú para clientes
 @app.route("/menu")
 def index():
-    return render_template("index.html", menu_secciones=menu_secciones)
+    es_mesero = session.get("es_mesero", False)
+    return render_template("index.html", menu_secciones=menu_secciones, es_mesero=es_mesero)
 
 @app.route("/pedido", methods=["POST"])
 def pedido():
